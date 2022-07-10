@@ -1,18 +1,29 @@
-import NextAuth from "next-auth";
-import GithubProvider from "next-auth/providers/github";
+import NextAuth from "next-auth"
+import { AppProviders } from "next-auth/providers"
+import CredentialsProvider from "next-auth/providers/credentials"
 
-// Prisma adapter for NextAuth, optional and can be removed
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "../../../server/db/client";
+const providers: AppProviders = [
+  CredentialsProvider({
+    id: "credentials",
+    name: "Login",
+    async authorize(credentials) {
+      const user = {
+        id: credentials?.name,
+        name: credentials?.name,
+      }
+      return user
+    },
+    credentials: {
+      name: { type: "text" },
+    },
+  }),
+]
 
 export default NextAuth({
   // Configure one or more authentication providers
-  adapter: PrismaAdapter(prisma),
-  providers: [
-    GithubProvider({
-      clientId: process.env.GITHUB_ID,
-      clientSecret: process.env.GITHUB_SECRET,
-    }),
-    // ...add more providers here
-  ],
-});
+  providers,
+  secret: process.env.AUTH_SECRET,
+  session: {
+    strategy: "jwt",
+  },
+})

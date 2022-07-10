@@ -4,36 +4,29 @@ import { EventEmitter } from "events"
 import * as trpc from "@trpc/server"
 import { NodeHTTPCreateContextFnOptions } from "@trpc/server/adapters/node-http"
 import * as trpcNext from "@trpc/server/adapters/next"
+import { getSession } from "next-auth/react"
 import { prisma } from "../db/client"
 import { IncomingMessage } from "http"
-import { parse } from "cookie"
-import { NextApiRequest } from "next"
 
 // create a global event emitter (could be replaced by redis, etc)
 const ee = new EventEmitter()
 
-function getYourId(req: NextApiRequest | IncomingMessage) {
-  const cookies = parse(req.headers.cookie || "")
-
-  if (cookies.yourId) {
-    return cookies.yourId
-  }
-
-  return null
-}
-
-export const createContext = ({
+export const createContext = async ({
   req,
   res,
 }:
   | trpcNext.CreateNextContextOptions
   | NodeHTTPCreateContextFnOptions<IncomingMessage, ws>) => {
+  const session = await getSession({ req })
+
+  console.log("createContext for", session?.user?.name ?? "unknown user")
+
   return {
     req,
     res,
     prisma,
     ee,
-    yourId: getYourId(req),
+    session,
   }
 }
 
